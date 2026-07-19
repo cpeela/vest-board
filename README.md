@@ -1,23 +1,29 @@
 # VestBoard
 
-A split-flap ("Vestaboard"-style) macOS board for your upcoming meetings.
+A split-flap ("Vestaboard"-style) macOS app that shows your upcoming meetings on
+animated flaps — with the classic terminal-board flip and a soft flap-clack sound.
 
-- **App window** — the real board: split-flap flip animation, left/right arrows to
-  page through meetings, click **JOIN** to open the meeting in your browser (new tab,
-  existing session). Keep it open on your desktop.
-- **Widget** — a `systemMedium` WidgetKit widget showing your next meeting. Appears on
-  the **desktop** *and* in **Notification Center** (right-edge swipe). Tap **JOIN** to
-  open the link. (Widgets can't run live animation, so the flaps are a static snapshot.)
+- **Menu bar** — a live mini split-flap board in the menu bar (`6M STANDUP`) that
+  flips as the countdown/next meeting changes. Click it for the next meeting on
+  mini flaps, a **Join** button, ←/→ paging, and an **Up Next** list.
+- **Board window** — the full 6×22 Vestaboard: time + countdown, title, location,
+  tap-to-join, page counter, scattered color chips, and per-meeting calendar color.
 
-Reads meetings from **Apple Calendar** via EventKit — point it at your work calendar in
-Settings. The app writes meetings to a shared App Group; the widget reads that cache
-(widgets can't prompt for Calendar permission), so keep the app running to stay fresh.
+Reads meetings from **Apple Calendar** via EventKit — point it at your work
+calendar in Settings.
+
+## Features
+
+- Split-flap animation with palette color-roll while flipping (small changes flip
+  minimally instead of cycling the whole deck)
+- Synthesized soft "flap-clack" audio (no asset), toggle in Settings
+- Live countdown, **auto-cycle** through meetings, **launch at login**
+- Join opens the meeting link in your existing browser session, new tab
 
 ## Requirements
 
-- **Xcode** (full app, from the App Store) — not just Command Line Tools.
-- A **paid Apple Developer account** — App Groups (app↔widget sharing) aren't available
-  on a free personal team.
+- **Xcode** (full app, not just Command Line Tools)
+- [XcodeGen](https://github.com/yonaskolb/XcodeGen) — `brew install xcodegen`
 
 ## Build & run
 
@@ -26,31 +32,33 @@ xcodegen generate          # creates VestBoard.xcodeproj from project.yml
 open VestBoard.xcodeproj
 ```
 
-In Xcode:
-1. Select the **VestBoard** target → Signing & Capabilities → pick your **Team**
-   (repeat for the **VestBoardWidget** target). App Group `group.com.lendapi.vestboard`
-   is already declared in the entitlements.
-2. Run the **VestBoard** scheme. Grant Calendar access when prompted.
-3. **VestBoard ▸ Settings…** → tick your LendAPI calendar.
-4. Add the widget: right-click desktop → **Edit Widgets** → search *VestBoard* → drop
-   the medium widget. It also shows in Notification Center.
+In Xcode: select the **VestBoard** target → *Signing & Capabilities* → pick your
+**Team**, then Run (⌘R). Grant Calendar access when prompted, then
+**VestBoard ▸ Settings…** to choose which calendar(s) to show.
+
+> The app runs **non-sandboxed** (personal desktop use) so it works on a free
+> Apple Developer team without App Group / extension provisioning.
+
+## Widget (optional, needs a paid team)
+
+A `systemMedium` WidgetKit widget exists in `Sources/Widget/` but is **not embedded**
+by default — free personal teams can't provision an embedded extension or an App
+Group. On a **paid** Apple Developer team, re-enable the `dependencies` block in
+`project.yml`, add an App Group to both entitlements, and the widget renders your
+next meeting on the desktop and in Notification Center.
 
 ## Layout
 
 ```
 Sources/
-  Shared/     Meeting, CalendarService (EventKit), SharedConfig (App Group cache),
-              SplitFlapView (the flip animation), Theme
-  App/        VestBoardApp, RootView, BoardView, BoardModel, SettingsView, PermissionView
-  Widget/     VestBoardWidget (bundle + TimelineProvider + medium layout)
-project.yml   XcodeGen spec (source of truth — .xcodeproj is generated, gitignored)
+  Shared/   Meeting · CalendarService (EventKit) · SharedConfig · Theme
+            SplitFlapView (flap engine + grid) · FlapClicker (audio)
+  App/      VestBoardApp · RootView · BoardView · BoardModel
+            MenuBarView · SettingsView · PermissionView
+  Widget/   VestBoardWidget (shelved unless on a paid team)
+project.yml  XcodeGen spec — source of truth; .xcodeproj is generated + gitignored
 ```
 
-## Notes / limits
+## License
 
-- Widget freshness depends on the app running (it owns Calendar access). If the app is
-  closed, the widget shows the last cached meetings.
-- Widget refresh is rate-limited by macOS; the timeline reloads at each meeting
-  start/end and ~every 30 min as a safety net.
-- The split-flap is a stylized tilt-flip. Bump `columns`/`cell` in `BoardView` /
-  `VestBoardWidget` to taste.
+MIT — see [LICENSE](LICENSE).

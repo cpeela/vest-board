@@ -1,6 +1,7 @@
 import SwiftUI
 import WidgetKit
 import EventKit
+import ServiceManagement
 
 /// Pick which calendars feed the board. Empty selection = all calendars.
 /// Point this at your LendAPI work calendar.
@@ -8,6 +9,8 @@ struct SettingsView: View {
     @State private var calendars = CalendarService.shared.availableCalendars()
     @State private var selected = Set(SharedConfig.selectedCalendarIDs)
     @State private var soundOn = SharedConfig.soundEnabled
+    @State private var autoCycle = SharedConfig.autoCycle
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     var body: some View {
         Form {
@@ -17,6 +20,10 @@ struct SettingsView: View {
                         SharedConfig.soundEnabled = on
                         FlapClicker.shared.enabled = on
                     }
+                Toggle("Auto-cycle meetings", isOn: $autoCycle)
+                    .onChange(of: autoCycle) { _, on in SharedConfig.autoCycle = on }
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, on in setLoginItem(on) }
             }
             Section("Calendars to show") {
                 if calendars.isEmpty {
@@ -59,5 +66,14 @@ struct SettingsView: View {
     private func persist() {
         SharedConfig.selectedCalendarIDs = Array(selected)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func setLoginItem(_ on: Bool) {
+        do {
+            on ? try SMAppService.mainApp.register() : try SMAppService.mainApp.unregister()
+        } catch {
+            NSLog("VB launch-at-login: \(error.localizedDescription)")
+            launchAtLogin = SMAppService.mainApp.status == .enabled  // reflect reality on failure
+        }
     }
 }

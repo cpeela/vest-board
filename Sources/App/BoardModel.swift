@@ -10,7 +10,9 @@ final class BoardModel: ObservableObject {
     @Published var index = 0
     @Published var authorized = CalendarService.shared.isAuthorized
 
-    private var timer: Timer?
+    private var displayTimer: Timer?
+    private var cycleTimer: Timer?
+    private var ticks = 0
 
     init() {
         FlapClicker.shared.enabled = SharedConfig.soundEnabled
@@ -18,7 +20,7 @@ final class BoardModel: ObservableObject {
             self, selector: #selector(calendarChanged),
             name: .EKEventStoreChanged, object: nil
         )
-        startTicking()
+        startTimers()
     }
 
     var current: Meeting? { meetings.indices.contains(index) ? meetings[index] : nil }
@@ -67,10 +69,30 @@ final class BoardModel: ObservableObject {
 
     @objc private func calendarChanged() { reload() }
 
-    /// Re-render once a minute so countdowns stay honest and past meetings drop.
-    private func startTicking() {
-        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.reload() }
+    private func startTimers() {
+        // Live countdown: refresh every 10s; drop ended meetings; full refetch each 60s.
+        displayTimer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.displayTick() }
         }
+        // Auto-cycle through meetings when enabled (reads the setting live).
+        cycleTimer = Timer.scheduledTimer(withTimeInterval: 8, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.cycleTick() }
+        }
+    }
+
+    private func displayTick() {
+        let live = meetings.filter { $0.end > Date() }
+        if live.count != meetings.count {
+            meetings = live
+            if index >= live.count { index = max(0, live.count - 1) }
+        }
+        ticks += 1
+        if ticks % 6 == 0 { reload() }       // full calendar refetch each ~60s
+        else { objectWillChange.send() }     // recompute countdowns in place
+    }
+
+    private func cycleTick() {
+        guard SharedConfig.autoCycle, meetings.count > 1 else { return }
+        withAnimation { index = (index + 1) % meetings.count }
     }
 }

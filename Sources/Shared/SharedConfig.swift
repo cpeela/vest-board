@@ -28,6 +28,12 @@ enum SharedConfig {
         set { store.set(newValue, forKey: soundKey) }
     }
 
+    private static let autoCycleKey = "autoCycle"
+    static var autoCycle: Bool {
+        get { store.object(forKey: autoCycleKey) as? Bool ?? false }
+        set { store.set(newValue, forKey: autoCycleKey) }
+    }
+
     static func saveMeetings(_ meetings: [Meeting]) {
         guard let data = try? JSONEncoder().encode(meetings) else { return }
         store.set(data, forKey: cacheKey)
