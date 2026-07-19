@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- App runs non-sandboxed for local/personal use: avoids free-team
+         provisioning traps in _libsecinit_appsandbox. Calendar access still
+         works via NSCalendarsFullAccessUsageDescription. Re-add the sandbox +
+         personal-information.calendars when moving to a paid team / the widget. -->
+</dict>
+</plist>

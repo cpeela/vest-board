@@ -1,0 +1,52 @@
+name: VestBoard
+options:
+  bundleIdPrefix: com.lendapi.vestboard
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    CODE_SIGN_STYLE: Automatic
+    # Xcode 16+ "debug dylib" launcher breaks TCC permission prompts (the request
+    # is attributed to the launcher, not the signed app, so nothing appears).
+    ENABLE_DEBUG_DYLIB: NO
+    # Set your Apple Developer Team ID here (or pick it in Xcode > Signing).
+    # App Groups require a paid Apple Developer account.
+    DEVELOPMENT_TEAM: ""
+
+targets:
+  VestBoard:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/App
+      - path: Sources/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lendapi.vestboard
+        INFOPLIST_FILE: Sources/App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/App/VestBoard.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
+        COMBINE_HIDPI_IMAGES: YES
+    # Widget shelved in favor of the menu bar (reliable on a free team). The
+    # widget target still builds; re-embed here once on a paid team + App Group.
+    # dependencies:
+    #   - target: VestBoardWidget
+    #     embed: true
+
+  VestBoardWidget:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: Sources/Widget
+      - path: Sources/Shared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lendapi.vestboard.widget
+        INFOPLIST_FILE: Sources/Widget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Sources/Widget/VestBoardWidget.entitlements
+        ENABLE_HARDENED_RUNTIME: YES
